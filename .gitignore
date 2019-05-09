@@ -1,2 +1,5 @@
 data
 log
+__pycache__
+.camera-room.py.swp
+camera-room.config.yml
