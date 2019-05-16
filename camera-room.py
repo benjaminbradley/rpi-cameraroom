@@ -7,6 +7,7 @@ import pygame
 from pynput.keyboard import Key, Listener
 from random import choice
 from subprocess import call, Popen
+import select
 import sys
 from time import sleep
 from picamera import PiCamera, Color
@@ -268,6 +269,11 @@ class CameraRoom(object):
       pass
     # clean up
     self.camera.stop_preview()
+    # clear keyboard buffer
+    cleared = False
+    while not cleared:
+      if select.select([sys.stdin,],[],[],0.0)[0]: r = sys.stdin.read(1)
+      else: cleared = True
 
 
 

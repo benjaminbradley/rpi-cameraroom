@@ -7,6 +7,7 @@ from picamera.color import NAMED_COLORS
 from pynput.keyboard import Key, Listener
 import sys
 from time import sleep
+import select
 
 #interactive adjustment of several app variables:
 #- screen/camera resolution
@@ -50,7 +51,9 @@ class CameraRoomConfig(object):
     'contrast' : list(range(0, 100, 10)),
     'image_effect' : ['none'] + list(PiCamera.IMAGE_EFFECTS.keys()),
     'awb_mode' : ['auto'] + list(PiCamera.AWB_MODES.keys()),
-    'exposure_mode' : ['auto'] + list(PiCamera.EXPOSURE_MODES.keys())
+    'exposure_mode' : ['auto'] + list(PiCamera.EXPOSURE_MODES.keys()),
+    'vflip': [False, True],
+    'hflip': [False, True],
   }
 
 
@@ -168,10 +171,10 @@ class CameraConfigEditor(object):
     else:
       is_new = True
     # initialize keyboard listener
-    listener = Listener(
+    self.listener = Listener(
         #on_press=on_press,
         on_release=self.on_release)
-    listener.start()
+    self.listener.start()
     # initialize camera
     self.camera = PiCamera(framerate = 30)
     self.config.setCamera(self.camera)
@@ -196,7 +199,14 @@ class CameraConfigEditor(object):
       # catch exceptions to ensure correct shutdown
       pass
     # shutdown
+    logging.debug("shutting down")
+    self.listener.stop()
     self.camera.stop_preview()
+    # clear keyboard buffer
+    cleared = False
+    while not cleared:
+      if select.select([sys.stdin,],[],[],0.0)[0]: r = sys.stdin.read(1)
+      else: cleared = True
 
 
 if __name__ == '__main__':
