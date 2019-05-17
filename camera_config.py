@@ -59,10 +59,14 @@ class CameraRoomConfig(object):
 
   def __init__(self, data = {}):
     self.data = data
+    self.init_defaults()
+
+
+  def init_defaults(self):
     for key,options in self.config_options.items():
       if key not in self.data or self.data[key] is None:
-        #logging.debug("key is %s, options are: %s" % (key, options))
-        logging.debug("no value found for %s, using default of %s" % (key, options[0]))
+        # initialize with default values as needed
+        #logging.debug("no value found for %s, using default of %s" % (key, options[0]))
         self.data[key] = options[0]
 
 
@@ -88,6 +92,7 @@ class CameraRoomConfig(object):
 
   def load(self, filename):
     self.data = yaml.load(open(filename), Loader=yaml.FullLoader)
+    self.init_defaults()
 
 
   def save(self, filename):
@@ -150,6 +155,7 @@ class CameraConfigEditor(object):
         self.camera.annotate_text = 'Saved config to '+config_filename
         sleep(2)
       elif(name == 'quit'):
+        logging.debug("quit selected")
         self.running = False
     elif key == Key.esc:
       #   select current (child) option
@@ -172,7 +178,6 @@ class CameraConfigEditor(object):
       is_new = True
     # initialize keyboard listener
     self.listener = Listener(
-        #on_press=on_press,
         on_release=self.on_release)
     self.listener.start()
     # initialize camera
@@ -191,13 +196,16 @@ class CameraConfigEditor(object):
         name = self.menu_options[self.current_menu_option_idx]
         text = name
         if name in self.config_option_names:
-          text += (": %s" % str(self.config.data[name]))
+          if name in self.config.data.keys(): value=self.config.data[name]
+          else: value=None
+          text += (": %s" % str(value))
         self.camera.annotate_text = text
         # listen for input events
         sleep(0.1)
     except:
       # catch exceptions to ensure correct shutdown
-      pass
+      e = sys.exc_info()[0]
+      logging.exception(e)
     # shutdown
     logging.debug("shutting down")
     self.listener.stop()
