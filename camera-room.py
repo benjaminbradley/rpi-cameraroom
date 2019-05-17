@@ -2,7 +2,7 @@ import datetime
 import logging
 import os
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, splitext
 import pygame
 from pynput.keyboard import Key, Listener
 from random import choice
@@ -173,7 +173,10 @@ class CameraRoom(object):
     # initialize display roll
     logging.debug("loading existing clips...")
     # load list of clips from  video_dir + '/*.mp4'
-    current_clips = [f for f in listdir(self.config.video_dir) if isfile(join(self.config.video_dir, f))]
+    current_clips = []
+    for f in listdir(self.config.video_dir):
+      if isfile(join(self.config.video_dir, f)) and splitext(f)[1] == '.mp4':
+        current_clips.append(f)
     # start main loop
     self.running = True
     while self.running:
