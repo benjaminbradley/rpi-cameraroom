@@ -6,7 +6,7 @@ from os.path import isfile, join
 import pygame
 from pynput.keyboard import Key, Listener
 from random import choice
-from subprocess import call, Popen
+from subprocess import call, Popen, DEVNULL
 import select
 import sys
 from time import sleep
@@ -62,10 +62,9 @@ class CameraRoom(object):
       self.config.apply()
     # initialize keyboard listener
     self.enter_pressed = False
-    listener = Listener(
-        on_press=self.on_press,
+    self.listener = Listener(
         on_release=self.on_release)
-    listener.start()
+    self.listener.start()
 
 
   def display_message(self, message):
@@ -125,13 +124,13 @@ class CameraRoom(object):
   def play_clip(self,filename):
     # play video file
     logging.debug("play_clip(%s)" % filename)
-    self.subproc = Popen(["omxplayer", filename])
+    self.subproc = Popen(["omxplayer", filename], stdout=DEVNULL, stderr=DEVNULL)
     self.subproc.wait()
     self.subproc = None
 
 
   def wait_input(self,timeout_sec):
-    self.camera.annotate_text = "Press button to record for 10 sec (enter)"
+    self.camera.annotate_text = " Press button to record for 10 sec (enter) "
     start = int(datetime.datetime.now().timestamp())
     wait_time = 0
     key_pressed = False
@@ -151,9 +150,6 @@ class CameraRoom(object):
     return result
 
 
-  def on_press(self,key):
-    logging.debug('{0} pressed'.format(key))
-
   def on_release(self,key):
     logging.debug('{0} release'.format(key))
     terminate_subproc = False
@@ -165,8 +161,6 @@ class CameraRoom(object):
       logging.debug("esc pressed")
       self.running = False
       terminate_subproc = True
-      # Stop listener
-      # return False
     if terminate_subproc and self.subproc is not None:
         logging.debug("terminating subprocess")
         self.subproc.kill()
@@ -268,6 +262,7 @@ class CameraRoom(object):
       logging.debug("leaving idle mode")
       pass
     # clean up
+    self.listener.stop()
     self.camera.stop_preview()
     # clear keyboard buffer
     cleared = False
