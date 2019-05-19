@@ -32,7 +32,7 @@ class CameraRoomConfig(object):
     return [default] + gt + lt
 
   # default is first value in options
-  config_options = {
+  camera_options = {
     'resolution' : [
       (640, 480),
       (1280, 720),
@@ -55,6 +55,10 @@ class CameraRoomConfig(object):
     'vflip': [False, True],
     'hflip': [False, True],
   }
+  room_options = {
+    'project_name' : ['dev', 'preflip2019', 'flipside2019', 'postflip2019'],
+  }
+  config_options = {**camera_options, **room_options}
 
 
   def __init__(self, data = {}):
@@ -83,11 +87,12 @@ class CameraRoomConfig(object):
 
   def set_value(self, key, value):
     self.data[key] = value
-    logging.debug("Setting camera.%s to %s" % (key, value))
-    #TODO: check for specific keys which may need a reset ?
-    if(key in ['annotate_background', 'annotate_foreground'] and value is not None):
-      value = Color(value)
-    setattr(self.camera, key, value)
+    if key in self.camera_options.keys():
+      logging.debug("Setting camera.%s to %s" % (key, value))
+      #TODO: check for specific keys which may need a reset ?
+      if(key in ['annotate_background', 'annotate_foreground'] and value is not None):
+        value = Color(value)
+      setattr(self.camera, key, value)
 
 
   def load(self, filename):

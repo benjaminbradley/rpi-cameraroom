@@ -1,8 +1,8 @@
 import datetime
 import logging
 import os
-from os import listdir
-from os.path import isfile, join, splitext
+from os import listdir, makedirs
+from os.path import isfile, join, splitext, isdir
 import pygame
 from pynput.keyboard import Key, Listener
 from random import choice
@@ -20,12 +20,10 @@ class CameraRoom(object):
   def __init__(self):
     # configuration
     data_dir = '/home/pi/rpi/projects/rpicam/data'
-    #project_name = 'test'
-    project_name = 'dev'
     self.config = CameraRoomConfig()
     if isfile(config_filename):
       self.config.load(config_filename)
-    self.config.video_dir = data_dir + '/' + project_name
+    self.config.video_dir = data_dir + '/' + self.config.data['project_name']
     self.config.clip_length = 10
     self.config.record_countdown = 3
     self.config.replay_count = 3
@@ -42,6 +40,9 @@ class CameraRoom(object):
     # init logging
     logging.basicConfig(format='%(asctime)-15s:%(levelname)s:%(filename)s#%(funcName)s(): %(message)s', level=logging.DEBUG, filename='/home/pi/rpi/projects/rpicam/log/camera-room.log')
     logging.debug("begin main")
+    # init storage
+    if not isdir(self.config.video_dir):
+      makedirs(self.config.video_dir)
     # init subproc handle
     self.subproc = None
     self.devnull = open(os.devnull,"w")
