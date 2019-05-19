@@ -91,17 +91,18 @@ class CameraRoom(object):
 
   def record_clip(self):
     logging.debug("record_clip()")
+    cancelled = False
     self.camera.annotate_background = Color('green')
     for i in range(self.config.record_countdown,0,-1):
-      self.camera.annotate_text = "Recording in %s sec" % i
-      sleep(1)
+      self.camera.annotate_text = " Recording in %s sec " % i
+      cancelled = self.wait_input(1)
+      if cancelled: return None
     filename_base = 'video.{:%Y-%m-%d.%H.%M.%S}'.format(datetime.datetime.now())
     raw_filename = self.config.video_dir + '/' + filename_base + '.h264'
     self.camera.start_recording(raw_filename)
     self.camera.annotate_background = None
     self.camera.annotate_foreground = Color('white')
     start = int(datetime.datetime.now().timestamp())
-    cancelled = False
     while(int(datetime.datetime.now().timestamp()) - start < self.config.clip_length and not cancelled):
       time_left = self.config.clip_length + start - int(datetime.datetime.now().timestamp())
       self.camera.annotate_text = str(time_left)
@@ -109,6 +110,8 @@ class CameraRoom(object):
       cancelled = self.enter_pressed
     self.camera.stop_recording()
     if cancelled:
+      self.enter_pressed = False
+      if isfile(raw_filename): os.remove(raw_filename)
       return None
     else:
       self.camera.stop_preview()
@@ -118,7 +121,6 @@ class CameraRoom(object):
       final_filename = self.config.video_dir + '/' + filename_base + '.mp4'
       call(["MP4Box", "-fps", "30", "-add", raw_filename, final_filename], stdout=self.devnull, stderr=self.devnull)
       os.remove(raw_filename)
-      self.camera.annotate_background = Color('blue')
       # clear message
       self.display_message('')
       return final_filename
@@ -134,7 +136,6 @@ class CameraRoom(object):
 
 
   def wait_input(self,timeout_sec):
-    self.camera.annotate_text = " Press button to record for 10 sec (enter) "
     start = int(datetime.datetime.now().timestamp())
     wait_time = 0
     key_pressed = False
@@ -193,6 +194,9 @@ class CameraRoom(object):
           # show preview
           self.camera.start_preview()
         # listen for button click
+        self.camera.annotate_foreground = Color('white')
+        self.camera.annotate_background = Color('blue')
+        self.camera.annotate_text = " Press to record 10 sec "
         button = self.wait_input(self.config.live_mode_idle_timeout)
         if(button):
           #  click button to record five seconds
@@ -207,6 +211,7 @@ class CameraRoom(object):
               "Press the button to discard it",
               "or do nothing to keep it."
             ])
+            self.camera.annotate_text = ''
             while(play_count < self.config.replay_count and not cancelled):
               cancelled = self.wait_input(self.config.video_replay_msg_wait)
               if not cancelled:
@@ -221,9 +226,10 @@ class CameraRoom(object):
                   ])
             self.display_message('')
             #  click to discard
-            button = self.wait_input(1)
+            button = cancelled or self.wait_input(1)
             if(button):
               #  click button to discard
+              self.enter_pressed = False
               logging.debug("discarding clip by user choice")
               self.display_message('discarding clip')
               os.remove(clip_filename)
