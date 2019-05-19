@@ -29,6 +29,8 @@ class CameraRoom(object):
     self.config.clip_length = 10
     self.config.record_countdown = 3
     self.config.replay_count = 3
+    self.config.live_mode_idle_timeout = 30  # time that it sits on the "press button to record" message until it goes back to playing past clips
+    self.config.video_replay_msg_wait = 2 # time that the 'video will be replayed' message appears in between plays for the new recording
     self.config.default_fgcolor = 'yellow'
     self.config.default_bgcolor = 'blue'
     self.config.default_camera_text_size = self.config.data['annotate_text_size']
@@ -189,7 +191,7 @@ class CameraRoom(object):
           # show preview
           self.camera.start_preview()
         # listen for button click
-        button = self.wait_input(10)  #TODO: bump up to 60 ?
+        button = self.wait_input(self.config.live_mode_idle_timeout)
         if(button):
           #  click button to record five seconds
           clip_filename = self.record_clip()
@@ -204,7 +206,7 @@ class CameraRoom(object):
               "or do nothing to keep it."
             ])
             while(play_count < self.config.replay_count and not cancelled):
-              cancelled = self.wait_input(2)
+              cancelled = self.wait_input(self.config.video_replay_msg_wait)
               if not cancelled:
                 self.play_clip(clip_filename)
                 cancelled = self.enter_pressed
