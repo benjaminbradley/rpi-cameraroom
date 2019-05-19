@@ -111,6 +111,7 @@ class CameraRoom(object):
     if cancelled:
       return None
     else:
+      self.camera.stop_preview()
       # show "converting" message
       self.display_message('Processing video...')
       # convert video file
